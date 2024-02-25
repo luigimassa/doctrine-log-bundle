@@ -2,15 +2,13 @@
 
 namespace Mb\DoctrineLogBundle\EventListener;
 
-use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PostFlushEventArgs;
+use Doctrine\Persistence\Event\LifecycleEventArgs;
 use JMS\Serializer\SerializerInterface as Serializer;
-
+use Mb\DoctrineLogBundle\Entity\Log as LogEntity;
 use Mb\DoctrineLogBundle\Service\AnnotationReader;
 use Mb\DoctrineLogBundle\Service\Logger as LoggerService;
-use Mb\DoctrineLogBundle\Entity\Log as LogEntity;
-use Mb\DoctrineLogBundle\Annotation\Loggable;
 use Psr\Http\Message\StreamInterface;
 use Psr\Log\LoggerInterface;
 
@@ -56,57 +54,23 @@ class Logger
      * Logger constructor.
      *
      * @param EntityManagerInterface $em
-     * @param Serializer             $serializer
-     * @param AnnotationReader       $reader
-     * @param array                  $ignoreProperties
+     * @param Serializer $serializer
+     * @param AnnotationReader $reader
+     * @param array $ignoreProperties
      */
     public function __construct(
         EntityManagerInterface $em,
-        Serializer $serializer,
-        AnnotationReader $reader,
-        LoggerInterface $monolog,
-        array $ignoreProperties
-    ) {
+        Serializer             $serializer,
+        AnnotationReader       $reader,
+        LoggerInterface        $monolog,
+        array                  $ignoreProperties
+    )
+    {
         $this->em = $em;
         $this->serializer = $serializer;
         $this->reader = $reader;
         $this->ignoreProperties = $ignoreProperties;
         $this->monolog = $monolog;
-    }
-
-    /**
-     * Post persist listener
-     *
-     * @param LifecycleEventArgs $args
-     */
-    public function postPersist(LifecycleEventArgs $args)
-    {
-        $entity = $args->getObject();
-        $this->log($entity, LogEntity::ACTION_CREATE);
-    }
-
-    /**
-     * Post update listener
-     *
-     * @param LifecycleEventArgs $args
-     */
-    public function postUpdate(LifecycleEventArgs $args)
-    {
-        $entity = $args->getObject();
-        $this->log($entity, LogEntity::ACTION_UPDATE);
-
-    }
-
-    /**
-     * Pre remove listener
-     *
-     * @param LifecycleEventArgs $args
-     */
-    public function preRemove(LifecycleEventArgs $args)
-    {
-        $entity = $args->getObject();
-        $this->log($entity, LogEntity::ACTION_REMOVE);
-
     }
 
     /**
@@ -127,17 +91,14 @@ class Logger
     }
 
     /**
-     * Saves a log
+     * Post persist listener
      *
-     * @param LogEntity $log
-     * @return bool
+     * @param LifecycleEventArgs $args
      */
-    public function save(LogEntity $log) : bool
+    public function postPersist(LifecycleEventArgs $args)
     {
-        $this->em->persist($log);
-        $this->em->flush();
-
-        return true;
+        $entity = $args->getObject();
+        $this->log($entity, LogEntity::ACTION_CREATE);
     }
 
     /**
@@ -176,7 +137,7 @@ class Logger
                         if (is_object($values[1]) && method_exists($values[1], 'getId')) {
                             $values[1] = $values[1]->getId();
                         } elseif ($values[1] instanceof StreamInterface) {
-                            $values[1] = (string) $values[1];
+                            $values[1] = (string)$values[1];
                         }
                     }
 
@@ -208,17 +169,55 @@ class Logger
      * @param string $changes
      * @return LogEntity
      */
-    private function createLogEntity($object, $action, $changes = null) : LogEntity
+    private function createLogEntity($object, $action, $changes = null): LogEntity
     {
         $log = new LogEntity();
         $log
             ->setObjectClass(str_replace('Proxies\__CG__\\', '', get_class($object)))
             ->setForeignKey($object->getId())
             ->setAction($action)
-            ->setChanges($changes)
-        ;
+            ->setChanges($changes);
 
         return $log;
+    }
+
+    /**
+     * Pre remove listener
+     *
+     * @param LifecycleEventArgs $args
+     */
+    public function postRemove(LifecycleEventArgs $args)
+    {
+        $entity = $args->getObject();
+        $this->log($entity, LogEntity::ACTION_REMOVE);
+
+    }
+
+    /**
+     * Post update listener
+     *
+     * @param LifecycleEventArgs $args
+     */
+    public function postUpdate(LifecycleEventArgs $args)
+    {
+        $entity = $args->getObject();
+
+        $this->log($entity, LogEntity::ACTION_UPDATE);
+
+    }
+
+    /**
+     * Saves a log
+     *
+     * @param LogEntity $log
+     * @return bool
+     */
+    public function save(LogEntity $log): bool
+    {
+        $this->em->persist($log);
+        $this->em->flush();
+
+        return true;
     }
 }
 
