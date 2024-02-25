@@ -5,7 +5,6 @@
     "require": {
         "php": "^8",
         "symfony/orm-pack": "*",
-        "stof/doctrine-extensions-bundle": "^v1.11.0",
         "symfony/monolog-bundle": "^v3.10.0",
         "symfony/serializer-pack": "^1.3"
     },
