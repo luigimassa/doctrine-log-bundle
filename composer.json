@@ -16,6 +16,7 @@
             "email": "manas.du@gmail.com"
         }
     ],
+    "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
             "Mb\\DoctrineLogBundle\\": "src/"
