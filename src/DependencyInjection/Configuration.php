@@ -14,7 +14,7 @@ class Configuration implements ConfigurationInterface
     /**
      * @inheritDoc
      */
-    public function getConfigTreeBuilder()
+    public function getConfigTreeBuilder(): TreeBuilder
     {
 	    $treeBuilder = new TreeBuilder('mb_doctrine_log');
 	    if (method_exists($treeBuilder, 'getRootNode')) {
